@@ -1,0 +1,36 @@
+#############################################################################
+# An OpenShift Origin deployment configuration provides a replication
+# controller, spins up pods, and also provides the ability to transition from
+# one deployment of an image to a new one.
+# https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations
+#############################################################################
+- name: create demo-api-db deployment config
+  openshift_v1_deployment_config:
+    name: demo-api-db
+    namespace: '{{ namespace }}'
+    labels:
+      app: demo-api-db
+      service: demo-api-db
+    replicas: 1
+    selector:
+      app: demo-api-db
+      service: demo-api-db
+    spec_template_metadata_labels:
+      app: demo-api-db
+      service: demo-api-db
+    containers:
+    - env:
+      - name: POSTGRESQL_PASSWORD
+        value: "{{ postgresql_password }}"
+      - name: POSTGRESQL_USER
+        value: "{{ postgresql_user }}"
+      - name: POSTGRESQL_DATABASE
+        value: "{{ postgresql_database }}"
+      image: docker.io/centos/postgresql-95-centos7
+      name: demo-api-db
+      ports:
+      - container_port: 5432
+        protocol: TCP
+      termination_message_path: /dev/termination-log
+      working_dir: /
+

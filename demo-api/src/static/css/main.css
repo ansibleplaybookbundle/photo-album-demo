@@ -1,0 +1,5 @@
+.status-page .jumbotron {
+    background-size: cover;
+    background: url("/static/img/dog-bridge-banner.jpeg") no-repeat center bottom;
+    color: white;
+}

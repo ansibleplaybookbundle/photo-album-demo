@@ -1,0 +1,46 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>The Random Album</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'album/css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'album/css/font-awesome.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'album/css/main.css' %}" />
+    <link rel="icon" type="image/x-icon" href="{% static 'album/img/favicon.ico' %}" />
+</head>
+<body>
+
+<div class="error-page">
+    <div class="container">
+        <div class="jumbotron">
+            <div class="container">
+                <h1 class="display-3">No pics for you!</h1>
+                <p>Sorry, there was a problem loading the web page.</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h2 class="database-issue-heading">
+                    <i class="fa fa-exclamation-circle"></i> No API loaded
+                </h2>
+                <p>There was a problem connecting to the API</p>
+                <form>
+                    <div class="form-group row">
+                        <label for="apiURL" class="col-sm-2 col-form-label">API_URL:</label>
+                        <div class="col-sm-10">
+                            <input type="text" readonly class="form-control-plaintext" id="apiURL"
+                                   value="{{ api_url }}">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

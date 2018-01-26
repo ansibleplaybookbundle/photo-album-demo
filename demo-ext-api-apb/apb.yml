@@ -1,0 +1,25 @@
+version: 1.0
+name: demo-ext-api-apb
+description: Connection to external API of cats (thecatapi.com)
+bindable: True
+async: optional
+metadata:
+  displayName: External Cat API (APB)
+  imageUrl: https://png.icons8.com/cat/office/80
+plans:
+  - name: default
+    description: Creates the external credentials
+    free: True
+    metadata: {}
+    parameters:
+      - name: api_key
+        title: API Key
+        type: string
+        description: Generated if left blank
+        display_group: API Settings
+      - name: api_secret
+        title: API Secret
+        type: string
+        description: Generated if left blank
+        display_type: password
+        display_group: API Settings

@@ -1,0 +1,170 @@
+##############################################################################
+## Provision demo-api
+## This role executes much of the needed functionality to provision an
+## application using an Ansible Playbook Bundle.  Included in the comments
+## below are some sample resources for getting started deploying an application
+## to OpenShift.
+##############################################################################
+
+
+#############################################################################
+## If the api_key/secret were blank, generate some.
+#############################################################################
+- set_fact:
+    api_key: "{{ lookup('password', '/tmp/gen_key chars=ascii_letters,digits') }}"
+  when: ( (api_key is undefined) or (api_key is none) or (api_key | trim == '') )
+
+- set_fact:
+    api_secret: "{{ lookup('password', '/tmp/gen_secret chars=ascii_letters,digits') }}"
+  when: ( (api_secret is undefined) or (api_secret is none) or (api_secret | trim == '') )
+
+
+#############################################################################
+## Depending on the plan chosen by the user, provision different options on
+## the database
+#############################################################################
+- include: dev.yml
+  when: _apb_plan_id == "dev"
+
+- include: prod.yml
+  when: _apb_plan_id == "prod"
+
+
+#############################################################################
+## A Kubernetes service serves as an internal load balancer.  It identifies a
+## set of replicated pods in order to proxy the connections it receives to them.
+## https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#services
+#############################################################################
+- name: create demo-api-db service
+  k8s_v1_service:
+    name: demo-api-db
+    namespace: '{{ namespace }}'
+    state: present
+    labels:
+      app: demo-api-db
+      service: demo-api-db
+    selector:
+      app: demo-api-db
+      service: demo-api-db
+    ports:
+    - name: port-5432
+      port: 5432
+      protocol: TCP
+      target_port: 5432
+
+
+
+#############################################################################
+## Seed the database with some sample data for the demo.
+#############################################################################
+- name: Wait for the database to come up
+  wait_for:
+    port: 5432
+    host: demo-api-db.{{ namespace }}
+    timeout: 300
+
+- name: Seed database with demo data
+  shell: "PGPASSWORD={{ postgresql_password }} psql -U {{ postgresql_user }} -d {{ postgresql_database }} -p 5432 -h demo-api-db.{{ namespace }} -f {{ role_path }}/files/load_images.sql"
+
+
+#############################################################################
+## An OpenShift Origin route exposes a service at a host name, so that external
+## clients can reach it by name. Each route consists of a name, a service
+## selector, and an optional security configuration.
+## https://docs.openshift.org/latest/architecture/core_concepts/routes.html
+##
+## This is the route for external clients to download and view the images.
+## We'll use this route later, because our pods will need to know the information.
+#############################################################################
+- name: create demo-api route
+  openshift_v1_route:
+    name: demo-api
+    namespace: '{{ namespace }}'
+    labels:
+      app: demo-api
+      service: demo-api
+    to_name: demo-api
+    spec_port_target_port: web
+  register: api_route
+
+
+#############################################################################
+## An OpenShift Origin deployment configuration provides a replication
+## controller, spins up pods, and also provides the ability to transition from
+## one deployment of an image to a new one.
+## https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations
+##
+## This deployment config uses the route information from the previous task
+## to inject as env variables into the pods.  This way, it can give out
+## absolute urls for resources when required.
+#############################################################################
+- name: create demo-api deployment config
+  openshift_v1_deployment_config:
+    name: demo-api
+    namespace: '{{ namespace }}'
+    labels:
+      app: demo-api
+      service: demo-api
+    replicas: 1
+    selector:
+      app: demo-api
+      service: demo-api
+    spec_template_metadata_labels:
+      app: demo-api
+      service: demo-api
+    containers:
+    - env:
+      - name: DB_TYPE
+        value: postgres
+      - name: DB_HOST
+        value: demo-api-db
+      - name: DB_PORT
+        value: "5432"
+      - name: DB_PASSWORD
+        value: "{{ postgresql_password }}"
+      - name: DB_USER
+        value: "{{ postgresql_user }}"
+      - name: DB_NAME
+        value: "{{ postgresql_database }}"
+      - name: API_HOST
+        value: "{{ api_route.route.spec.host }}"
+      image: docker.io/apbdemo/demo-api:latest # replace with your application image
+      name: demo-api
+      ports:
+      - container_port: 8080
+        protocol: TCP
+
+
+#############################################################################
+## A Kubernetes service serves as an internal load balancer.  It identifies a
+## set of replicated pods in order to proxy the connections it receives to them.
+## https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#services
+#############################################################################
+- name: create demo-api service
+  k8s_v1_service:
+    name: demo-api
+    namespace: '{{ namespace }}'
+    labels:
+      app: demo-api
+      service: demo-api
+    selector:
+      app: demo-api
+      service: demo-api
+    ports:
+      - name: web
+        port: 80
+        target_port: 8080
+
+
+##############################################################################
+## Bindable services must make credentials available to the Ansible Service
+## Broker during the provision stage.  They will later be made available to
+## applications after a binding is created.
+## https://github.com/kubernetes-incubator/service-catalog/blob/master/docs/design.md#using-a-service-instance
+##############################################################################
+- name: encode bind credentials
+  asb_encode_binding:
+    fields:
+      API_URL: "http://demo-api"
+      API_KEY: "{{ api_key }}"
+      API_SECRET: "{{ api_secret }}"

@@ -1,0 +1,20 @@
+version: 1.0
+name: demo-app-apb
+description: Deploys a demo application showing random pictures.
+bindable: False
+async: optional
+metadata:
+  displayName: Random Images (APB)
+  imageUrl: https://png.icons8.com/photo-gallery/dusk/64
+plans:
+  - name: default
+    description: Normal installation
+    free: True
+    metadata: {}
+    parameters:
+      - name: album_title
+        title: Album Title
+        type: string
+        default: "The Random Album"
+        updatable: True
+        required: True

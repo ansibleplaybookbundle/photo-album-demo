@@ -1,0 +1,86 @@
+#############################################################################
+# Provision demo-app
+# This role executes much of the needed functionality to provision an
+# application using an Ansible Playbook Bundle.  Included in the comments
+# below are some sample resources for getting started deploying an application
+# to OpenShift.
+#############################################################################
+
+
+#############################################################################
+# An OpenShift Origin deployment configuration provides a replication
+# controller, spins up pods, and also provides the ability to transition from
+# one deployment of an image to a new one.
+# https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations
+#############################################################################
+- name: create deployment config
+  openshift_v1_deployment_config:
+    name: demo-app
+    namespace: '{{ namespace }}'
+    labels:
+      app: demo-app
+      service: demo-app
+    replicas: 1
+    selector:
+      app: demo-app
+      service: demo-app
+    spec_template_metadata_labels:
+      app: demo-app
+      service: demo-app
+    strategy_type: Recreate
+    containers:
+    - env:
+      - name: ALBUM_TITLE
+        value: "{{ album_title }}"
+      image: docker.io/apbdemo/demo-app:latest # replace with your application image
+      name: demo-app
+      ports:
+      - container_port: 8080
+        protocol: TCP
+      readiness_probe:
+        http_get:
+          path: /
+          port: 8080
+          scheme: HTTP
+        initial_delay_seconds: 5
+        timeout_seconds: 3
+
+
+#############################################################################
+# A Kubernetes service serves as an internal load balancer.  It identifies a
+# set of replicated pods in order to proxy the connections it receives to them.
+# https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#services
+#############################################################################
+- name: create demo-app service
+  k8s_v1_service:
+    name: demo-app
+    namespace: '{{ namespace }}'
+    labels:
+      app: demo-app
+      service: demo-app
+    selector:
+      app: demo-app
+      service: demo-app
+    ports:
+      - name: web
+        port: 80
+        target_port: 8080
+
+
+#############################################################################
+# An OpenShift Origin route exposes a service at a host name, so that external
+# clients can reach it by name. Each route consists of a name, a service
+# selector, and an optional security configuration.
+# https://docs.openshift.org/latest/architecture/core_concepts/routes.html
+#############################################################################
+- name: create demo-app route
+  openshift_v1_route:
+    name: demo-app
+    namespace: '{{ namespace }}'
+    labels:
+      app: demo-app
+      service: demo-app
+    to_name: demo-app
+    spec_port_target_port: web
+
+

@@ -1,0 +1,11 @@
+.error-page .jumbotron {
+    background-image: url("../img/sad-dog.jpg");
+    background-size: cover;
+    background-repeat:no-repeat;
+    background-position:center bottom;
+    color: white;
+}
+
+.db-error {
+    color: darkred;
+}

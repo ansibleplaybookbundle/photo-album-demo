@@ -1,0 +1,65 @@
+################################################################################
+# Shared Parameters
+################################################################################
+_p: &_p
+  - name: api_key
+    title: API Key
+    type: string
+    description: Generated if left blank
+    display_group: API Settings
+  - name: api_secret
+    title: API Secret
+    type: string
+    description: Generated if left blank
+    display_type: password
+    display_group: API Settings
+  - name: postgresql_database
+    title: PostgreSQL Database Name
+    type: string
+    default: demodogs
+    display_group: Database Settings
+    required: True
+  - name: postgresql_user
+    title: PostgreSQL User
+    type: string
+    default: demouser
+    display_group: Database Settings
+    required: True
+  - name: postgresql_password
+    title: PostgreSQL Password
+    type: string
+    default: demopass
+    display_type: password
+    display_group: Database Settings
+    required: True
+
+
+
+################################################################################
+# APB definition - demo-api-apb
+################################################################################
+version: 1.0
+name: demo-api-apb
+description: Internal Dog API
+bindable: True
+async: optional
+metadata:
+  displayName: Internal Dog API (APB)
+  imageUrl: https://png.icons8.com/dog/office/80
+plans:
+  - name: dev
+    description: The Dog API for developers
+    free: true
+    metadata:
+      displayName: Development
+      longDescription: This plan uses a single non-HA PostgreSQL server without persistent storage
+      cost: $0.00
+    parameters: *_p
+  - name: prod
+    description: The Dog API with persistent storage for production use
+    free: true
+    metadata:
+      displayName: Production
+      longDescription: This plan uses a single non-HA PostgreSQL server with persistent storage
+      cost: $0.00
+    parameters: *_p

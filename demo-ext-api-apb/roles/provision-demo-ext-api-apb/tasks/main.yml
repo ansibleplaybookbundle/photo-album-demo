@@ -1,0 +1,24 @@
+#############################################################################
+# If the api_key/secret were blank, generate some.
+#############################################################################
+- set_fact:
+    api_key: "{{ lookup('password', '/tmp/gen_key chars=ascii_letters,digits') }}"
+  when: ( (api_key is undefined) or (api_key is none) or (api_key | trim == '') )
+
+- set_fact:
+    api_secret: "{{ lookup('password', '/tmp/gen_secret chars=ascii_letters,digits') }}"
+  when: ( (api_secret is undefined) or (api_secret is none) or (api_secret | trim == '') )
+
+
+##############################################################################
+## Bindable services must make credentials available to the Ansible Service
+## Broker during the provision stage.  They will later be made available to
+## applications after a binding is created.
+## https://github.com/kubernetes-incubator/service-catalog/blob/master/docs/design.md#using-a-service-instance
+##############################################################################
+- name: encode bind credentials
+  asb_encode_binding:
+    fields:
+      API_URL: http://thecatapi.com/api
+      API_KEY: "{{ api_key }}"
+      API_SECRET: "{{ api_secret }}"
