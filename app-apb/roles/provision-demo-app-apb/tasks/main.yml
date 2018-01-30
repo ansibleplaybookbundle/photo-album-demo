@@ -32,7 +32,7 @@
     - env:
       - name: ALBUM_TITLE
         value: "{{ album_title }}"
-      image: docker.io/apbdemo/demo-app:latest # replace with your application image
+      image: docker.io/ansibleplaybookbundle/photo-album-demo-app:latest # replace with your application image
       name: demo-app
       ports:
       - container_port: 8080

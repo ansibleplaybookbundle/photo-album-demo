@@ -1,6 +1,6 @@
-CONTEXT = docker.io/apbdemo
+CONTEXT = docker.io/ansibleplaybookbundle
 VERSION = latest
-IMAGE_NAME = demo-app
+IMAGE_NAME = photo-album-demo-api
 
 all: build
 build:

@@ -128,7 +128,7 @@
         value: "{{ postgresql_database }}"
       - name: API_HOST
         value: "{{ api_route.route.spec.host }}"
-      image: docker.io/apbdemo/demo-api:latest # replace with your application image
+      image: docker.io/ansibleplaybookbundle/photo-album-demo-api:latest # replace with your application image
       name: demo-api
       ports:
       - container_port: 8080
