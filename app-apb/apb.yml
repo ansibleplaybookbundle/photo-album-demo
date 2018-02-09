@@ -18,3 +18,9 @@ plans:
         default: "The Random Album"
         updatable: True
         required: True
+      - name: proxy_passthrough
+        title: Pass proxy settings through from broker?
+        type: boolean
+        default: False
+        updatable: True
+        required: True

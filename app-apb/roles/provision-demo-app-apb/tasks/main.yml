@@ -6,6 +6,18 @@
 # to OpenShift.
 #############################################################################
 
+- name: create proxy config map
+  k8s_v1_config_map:
+    name: proxy-config
+    namespace: '{{ namespace }}'
+    data:
+      http_proxy: {{ lookup('env','http_proxy') }}
+      https_proxy: {{ lookup('env','https_proxy') }}
+      no_proxy: {{ lookup('env','no_proxy') }}
+      HTTP_PROXY: {{ lookup('env','http_proxy') }}
+      HTTPS_PROXY: {{ lookup('env','https_proxy') }}
+      NO_PROXY: {{ lookup('env','no_proxy') }}
+  when: proxy_passthrough
 
 #############################################################################
 # An OpenShift Origin deployment configuration provides a replication
@@ -13,6 +25,7 @@
 # one deployment of an image to a new one.
 # https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations
 #############################################################################
+
 - name: create deployment config
   openshift_v1_deployment_config:
     name: demo-app
@@ -44,6 +57,43 @@
           scheme: HTTP
         initial_delay_seconds: 5
         timeout_seconds: 3
+  when: not proxy_passthrough
+
+- name: create deployment config with proxy passthrough
+  openshift_v1_deployment_config:
+    name: demo-app
+    namespace: '{{ namespace }}'
+    labels:
+      app: demo-app
+      service: demo-app
+    replicas: 1
+    selector:
+      app: demo-app
+      service: demo-app
+    spec_template_metadata_labels:
+      app: demo-app
+      service: demo-app
+    strategy_type: Recreate
+    containers:
+    - env:
+      - name: ALBUM_TITLE
+        value: "{{ album_title }}"
+      envFrom:
+      - configMapRef:
+          name: proxy-config
+      image: docker.io/ansibleplaybookbundle/photo-album-demo-app:latest # replace with your application image
+      name: demo-app
+      ports:
+      - container_port: 8080
+        protocol: TCP
+      readiness_probe:
+        http_get:
+          path: /
+          port: 8080
+          scheme: HTTP
+        initial_delay_seconds: 5
+        timeout_seconds: 3
+  when: proxy_passthrough
 
 
 #############################################################################
@@ -82,5 +132,3 @@
       service: demo-app
     to_name: demo-app
     spec_port_target_port: web
-
-
