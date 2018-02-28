@@ -19,7 +19,7 @@ plans:
         updatable: True
         required: True
       - name: proxy_passthrough
-        title: Pass proxy settings through from broker?
+        title: Use broker proxy settings
         type: boolean
         default: False
         updatable: True
