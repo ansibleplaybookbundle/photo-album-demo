@@ -33,3 +33,12 @@
     name: demo-app
     namespace: '{{ namespace }}'
     state: absent
+
+#############################################################################
+# Deprovision proxy-config configmap
+#############################################################################
+- name: Remove proxy-config
+  k8s_v1_config_map:
+    name: proxy-config
+    state: absent
+    namespace: '{{ namespace }}'

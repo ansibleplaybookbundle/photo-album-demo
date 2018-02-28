@@ -6,13 +6,13 @@
 # to OpenShift.
 #############################################################################
 
-
 #############################################################################
 # An OpenShift Origin deployment configuration provides a replication
 # controller, spins up pods, and also provides the ability to transition from
 # one deployment of an image to a new one.
 # https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations
 #############################################################################
+
 - name: create deployment config
   openshift_v1_deployment_config:
     name: demo-app
@@ -45,6 +45,29 @@
         initial_delay_seconds: 5
         timeout_seconds: 3
 
+- name: create proxy config map
+  k8s_v1_config_map:
+    name: proxy-config
+    namespace: '{{ namespace }}'
+    data:
+      http_proxy: "{{ lookup('env','http_proxy') }}"
+      https_proxy: "{{ lookup('env','https_proxy') }}"
+      no_proxy: "{{ lookup('env','no_proxy') }}"
+      HTTP_PROXY: "{{ lookup('env','http_proxy') }}"
+      HTTPS_PROXY: "{{ lookup('env','https_proxy') }}"
+      NO_PROXY: "{{ lookup('env','no_proxy') }}"
+  when: proxy_passthrough
+
+- name: enable proxy passthrough on deployment config
+  openshift_v1_deployment_config:
+    name: demo-app
+    namespace: '{{ namespace }}'
+    containers:
+    - name: demo-app
+      env_from:
+      - config_map_ref:
+          name: proxy-config
+  when: proxy_passthrough
 
 #############################################################################
 # A Kubernetes service serves as an internal load balancer.  It identifies a
@@ -82,5 +105,3 @@
       service: demo-app
     to_name: demo-app
     spec_port_target_port: web
-
-
